@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <!-- Main Pages -->
+    <url>
+        <loc>https://gamesensefantasy.com/</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/pages/games.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/pages/about.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/pages/contact.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/pages/faq.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <!-- Legal Pages -->
+    <url>
+        <loc>https://gamesensefantasy.com/pages/terms.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/pages/privacy.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/pages/disclaimer.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/pages/fair-play.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/pages/responsible-gaming.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/pages/community-rules.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <!-- Game Pages -->
+    <url>
+        <loc>https://gamesensefantasy.com/games/chicken.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/games/dice.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/games/mines.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/games/plinko.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/games/11x.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/games/247laser.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/games/fairplay.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/games/slots.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/games/poker.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://gamesensefantasy.com/games/blackjack.php</loc>
+        <lastmod>2026-01-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+</urlset>

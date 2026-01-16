@@ -1,0 +1,41 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+*.tmp
+*.log
+*.pid
+
+# Node modules (if used)
+node_modules/
+package-lock.json
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Cache files
+*.cache
+.cache/
+
+# Sensitive data
+config/database.php
+config/secrets.php
+
+# Build files
+dist/
+build/
+
+# Railway specific
+.railway/
+railway.json

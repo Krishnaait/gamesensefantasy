@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Allow: /pages/
+Allow: /games/
+Allow: /assets/
+
+Disallow: /config/
+Disallow: /includes/
+Disallow: /*.php$
+Disallow: /admin/
+
+# Sitemap
+Sitemap: https://gamesensefantasy.com/sitemap.xml
+
+# Crawl delay
+Crawl-delay: 1

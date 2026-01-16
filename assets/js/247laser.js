@@ -211,8 +211,10 @@ laserCanvas.addEventListener('click', (e) => {
     if (!laserGameState.isPlaying) return;
     
     const rect = laserCanvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = laserCanvas.width / rect.width;
+    const scaleY = laserCanvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
     
     for (let target of laserGameState.targets) {
         if (!target.hit && target.isClicked(x, y)) {

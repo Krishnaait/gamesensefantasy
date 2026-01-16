@@ -219,8 +219,10 @@ pokerCanvas.addEventListener('click', (e) => {
     if (pokerGameState.gamePhase !== 'dealt') return;
     
     const rect = pokerCanvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = pokerCanvas.width / rect.width;
+    const scaleY = pokerCanvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
     
     const cardWidth = 80;
     const cardHeight = 120;

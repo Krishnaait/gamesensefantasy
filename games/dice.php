@@ -81,8 +81,6 @@ include '../includes/header.php';
                     <button class="btn btn-sm btn-secondary quick-bet" data-amount="10">10</button>
                     <button class="btn btn-sm btn-secondary quick-bet" data-amount="50">50</button>
                     <button class="btn btn-sm btn-secondary quick-bet" data-amount="100">100</button>
-                    <button class="btn btn-sm btn-secondary quick-bet" data-amount="250">250</button>
-                    <button class="btn btn-sm btn-secondary quick-bet" data-amount="500">500</button>
                     <button class="btn btn-sm btn-secondary quick-bet" data-amount="max">MAX</button>
                 </div>
             </div>

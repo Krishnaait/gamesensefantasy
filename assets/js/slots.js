@@ -1,167 +1,47 @@
-/**
- * Slots Game Implementation
- * Classic slot machine
- */
-
-const slotsCanvas = document.getElementById('slotsCanvas');
-const slotsCtx = slotsCanvas.getContext('2d');
-
-let slotsGameState = {
-    balance: parseInt(localStorage.getItem('user_coins')) || 1000,
-    betAmount: 10,
-    totalSpins: 0,
-    lastWin: 0,
-    isSpinning: false,
-    reels: [0, 0, 0],
-    symbols: ['🍒', '🍋', '🍊', '🍉', '7️⃣']
-};
-
-const PAYOUTS = {
-    '🍒🍒🍒': 2,
-    '🍋🍋🍋': 3,
-    '🍊🍊🍊': 4,
-    '🍉🍉🍉': 5,
-    '7️⃣7️⃣7️⃣': 10
-};
-
-function drawSlotsDisplay() {
-    // Clear canvas
-    slotsCtx.fillStyle = 'rgba(10, 14, 39, 0.8)';
-    slotsCtx.fillRect(0, 0, slotsCanvas.width, slotsCanvas.height);
+document.addEventListener('DOMContentLoaded', function() {
+    const symbols = ['🍒','🍋','🍊','🍇','💎','⭐','7️⃣'];
+    const payouts = {'🍒':5,'🍋':10,'🍊':15,'🍇':20,'💎':50,'⭐':100,'7️⃣':500};
+    const spinBtn = document.getElementById('spinButton');
+    const reels = [document.getElementById('reel1'),document.getElementById('reel2'),document.getElementById('reel3')];
     
-    // Draw frame
-    slotsCtx.strokeStyle = '#FFD700';
-    slotsCtx.lineWidth = 3;
-    slotsCtx.strokeRect(50, 50, 500, 200);
-    
-    // Draw reels
-    const reelWidth = 140;
-    const reelHeight = 180;
-    const reelX = [80, 240, 400];
-    const reelY = 60;
-    
-    for (let i = 0; i < 3; i++) {
-        // Reel background
-        slotsCtx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        slotsCtx.fillRect(reelX[i], reelY, reelWidth, reelHeight);
-        slotsCtx.strokeStyle = '#7c3aed';
-        slotsCtx.lineWidth = 2;
-        slotsCtx.strokeRect(reelX[i], reelY, reelWidth, reelHeight);
+    spinBtn.addEventListener('click', function() {
+        const bet = parseInt(document.getElementById('betAmount').value) || 10;
+        const credits = getCredits();
+        if (bet < 1 || bet > credits) { alert('Invalid bet!'); return; }
+        setCredits(credits - bet);
         
-        // Draw symbol
-        slotsCtx.font = 'bold 80px Arial';
-        slotsCtx.textAlign = 'center';
-        slotsCtx.textBaseline = 'middle';
-        slotsCtx.fillStyle = '#FFD700';
-        slotsCtx.fillText(slotsGameState.symbols[slotsGameState.reels[i]], reelX[i] + reelWidth / 2, reelY + reelHeight / 2);
-    }
-    
-    // Draw title
-    slotsCtx.font = 'bold 24px Arial';
-    slotsCtx.fillStyle = '#FFD700';
-    slotsCtx.textAlign = 'center';
-    slotsCtx.fillText('🎰 SLOTS 🎰', slotsCanvas.width / 2, 30);
-}
-
-function spinSlots() {
-    if (slotsGameState.isSpinning) return;
-    
-    const betAmount = parseInt(document.getElementById('slotsBetAmount').value);
-    
-    if (betAmount < 1 || betAmount > 500) {
-        alert('Bet amount must be between 1 and 500 coins');
-        return;
-    }
-    
-    if (slotsGameState.balance < betAmount) {
-        alert('Insufficient balance');
-        return;
-    }
-    
-    slotsGameState.betAmount = betAmount;
-    slotsGameState.balance -= betAmount;
-    slotsGameState.isSpinning = true;
-    slotsGameState.totalSpins++;
-    
-    document.getElementById('slotsSpinBtn').disabled = true;
-    
-    // Animate spinning
-    let spins = 0;
-    const spinInterval = setInterval(() => {
-        slotsGameState.reels[0] = Math.floor(Math.random() * slotsGameState.symbols.length);
-        slotsGameState.reels[1] = Math.floor(Math.random() * slotsGameState.symbols.length);
-        slotsGameState.reels[2] = Math.floor(Math.random() * slotsGameState.symbols.length);
+        reels.forEach(r => r.classList.add('spinning'));
+        const results = [];
         
-        drawSlotsDisplay();
-        spins++;
-        
-        if (spins > 15) {
-            clearInterval(spinInterval);
+        setTimeout(() => {
+            reels.forEach((reel, i) => {
+                const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+                results.push(symbol);
+                reel.querySelector('.symbol').textContent = symbol;
+                reel.classList.remove('spinning');
+            });
             
-            // Final result
-            slotsGameState.reels[0] = Math.floor(Math.random() * slotsGameState.symbols.length);
-            slotsGameState.reels[1] = Math.floor(Math.random() * slotsGameState.symbols.length);
-            slotsGameState.reels[2] = Math.floor(Math.random() * slotsGameState.symbols.length);
-            
-            drawSlotsDisplay();
-            
-            // Check for win
-            const combination = slotsGameState.symbols[slotsGameState.reels[0]] +
-                               slotsGameState.symbols[slotsGameState.reels[1]] +
-                               slotsGameState.symbols[slotsGameState.reels[2]];
-            
-            if (PAYOUTS[combination]) {
-                const winAmount = betAmount * PAYOUTS[combination];
-                slotsGameState.balance += winAmount;
-                slotsGameState.lastWin = winAmount;
-                
-                document.getElementById('slotsResultDisplay').textContent = `✓ Won ${winAmount} coins!`;
-                document.getElementById('slotsResultDisplay').style.color = '#10b981';
+            if (results[0] === results[1] && results[1] === results[2]) {
+                const multiplier = payouts[results[0]];
+                const win = bet * multiplier;
+                setCredits(getCredits() + win);
+                document.getElementById('lastWin').textContent = win;
+                alert('WIN! ' + multiplier + 'x = ' + win + ' credits!');
             } else {
-                document.getElementById('slotsResultDisplay').textContent = `✗ No match`;
-                document.getElementById('slotsResultDisplay').style.color = '#ef4444';
+                document.getElementById('lastWin').textContent = 0;
             }
-            
-            updateSlotsUI();
-            slotsGameState.isSpinning = false;
-            document.getElementById('slotsSpinBtn').disabled = false;
-        }
-    }, 100);
-}
-
-function resetSlots() {
-    slotsGameState.isSpinning = false;
-    slotsGameState.reels = [0, 0, 0];
-    slotsGameState.lastWin = 0;
-    slotsGameState.totalSpins = 0;
+            updateUI();
+        }, 2000);
+    });
     
-    document.getElementById('slotsSpinBtn').disabled = false;
-    document.getElementById('slotsResultDisplay').textContent = '-';
-    document.getElementById('slotsResultDisplay').style.color = 'var(--accent-gold)';
-    document.getElementById('lastSlotWin').textContent = '0 Coins';
-    document.getElementById('totalSpins').textContent = '0';
+    document.querySelectorAll('.quick-bet').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.getElementById('betAmount').value = this.dataset.amount === 'max' ? getCredits() : this.dataset.amount;
+        });
+    });
     
-    drawSlotsDisplay();
-}
-
-function updateSlotsUI() {
-    document.getElementById('lastSlotWin').textContent = slotsGameState.lastWin + ' Coins';
-    document.getElementById('totalSpins').textContent = slotsGameState.totalSpins;
-    updateSlotsBalance();
-}
-
-function updateSlotsBalance() {
-    document.getElementById('slotsBalanceDisplay').textContent = slotsGameState.balance + ' Coins';
-    localStorage.setItem('user_coins', slotsGameState.balance);
-    
-    const coinDisplay = document.getElementById('coinBalance');
-    if (coinDisplay) {
-        coinDisplay.innerText = new Intl.NumberFormat().format(slotsGameState.balance) + ' Coins';
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    slotsGameState.balance = parseInt(localStorage.getItem('user_coins')) || 1000;
-    updateSlotsBalance();
-    drawSlotsDisplay();
+    function getCredits() { return parseInt(localStorage.getItem('credits') || '1000'); }
+    function setCredits(amount) { localStorage.setItem('credits', amount); updateUI(); }
+    function updateUI() { document.getElementById('credits').textContent = getCredits(); }
+    updateUI();
 });

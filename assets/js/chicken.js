@@ -1,259 +1,199 @@
 /**
- * Chicken Game - Canvas Implementation
- * Pick eggs and avoid bones
+ * Chicken Game - Risk/Reward Egg Picking Game
+ * Click eggs to reveal gems or bones
+ * Cash out anytime to collect winnings
  */
 
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-
-let gameState = {
-    isPlaying: false,
-    items: [],
-    multiplier: 1.0,
-    itemsCount: 0,
-    betAmount: 10,
-    winnings: 0,
-    balance: parseInt(localStorage.getItem('user_coins')) || 1000
-};
-
-const ITEM_RADIUS = 30;
-const ITEM_COUNT = 12;
-
-class Item {
-    constructor(x, y, isEgg) {
-        this.x = x;
-        this.y = y;
-        this.isEgg = isEgg;
-        this.radius = ITEM_RADIUS;
-        this.clicked = false;
+document.addEventListener('DOMContentLoaded', function() {
+    // Game state
+    let gameState = {
+        isPlaying: false,
+        bet: 0,
+        multiplier: 1.00,
+        eggsRevealed: 0,
+        totalEggs: 20,
+        boneCount: 5,
+        bonePositions: [],
+        revealedEggs: []
+    };
+    
+    // DOM elements
+    const eggGrid = document.getElementById('eggGrid');
+    const startBtn = document.getElementById('startButton');
+    const cashoutBtn = document.getElementById('cashoutButton');
+    const betInput = document.getElementById('betAmount');
+    const boneCountSelect = document.getElementById('boneCount');
+    const creditsEl = document.getElementById('credits');
+    const multiplierEl = document.getElementById('currentMultiplier');
+    const eggsRevealedEl = document.getElementById('eggsRevealed');
+    const potentialWinEl = document.getElementById('potentialWin');
+    
+    // Initialize
+    createEggGrid();
+    updateUI();
+    
+    // Create egg grid
+    function createEggGrid() {
+        eggGrid.innerHTML = '';
+        for (let i = 0; i < gameState.totalEggs; i++) {
+            const egg = document.createElement('div');
+            egg.className = 'egg';
+            egg.dataset.index = i;
+            egg.textContent = '🥚';
+            egg.addEventListener('click', () => handleEggClick(i));
+            eggGrid.appendChild(egg);
+        }
     }
     
-    draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    // Start game
+    startBtn.addEventListener('click', function() {
+        const bet = parseInt(betInput.value) || 10;
+        const credits = getCredits();
         
-        if (this.clicked) {
-            ctx.fillStyle = 'rgba(100, 100, 100, 0.3)';
-        } else if (this.isEgg) {
-            ctx.fillStyle = '#FFD700';
-            ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
-            ctx.shadowBlur = 10;
-        } else {
-            ctx.fillStyle = '#8B4513';
-            ctx.shadowColor = 'rgba(139, 69, 19, 0.5)';
-            ctx.shadowBlur = 10;
+        if (bet < 1) {
+            alert('Minimum bet is 1 credit!');
+            return;
         }
         
-        ctx.fill();
-        ctx.strokeStyle = this.isEgg ? '#FFA500' : '#654321';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        if (bet > credits) {
+            alert('Insufficient credits!');
+            return;
+        }
         
-        ctx.shadowColor = 'transparent';
+        // Deduct bet
+        setCredits(credits - bet);
         
-        // Draw emoji
-        ctx.font = '20px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#000';
-        ctx.fillText(this.isEgg ? '🥚' : '💀', this.x, this.y);
-    }
-    
-    isClicked(x, y) {
-        const distance = Math.sqrt((x - this.x) ** 2 + (y - this.y) ** 2);
-        return distance < this.radius;
-    }
-}
-
-function initGame() {
-    gameState.items = [];
-    gameState.multiplier = 1.0;
-    gameState.itemsCount = 0;
-    gameState.winnings = 0;
-    
-    // Create random items (80% eggs, 20% bones)
-    const positions = generateRandomPositions(ITEM_COUNT);
-    positions.forEach((pos, index) => {
-        const isEgg = Math.random() < 0.8;
-        gameState.items.push(new Item(pos.x, pos.y, isEgg));
+        // Initialize game
+        gameState = {
+            isPlaying: true,
+            bet: bet,
+            multiplier: 1.00,
+            eggsRevealed: 0,
+            totalEggs: 20,
+            boneCount: parseInt(boneCountSelect.value),
+            bonePositions: [],
+            revealedEggs: []
+        };
+        
+        // Randomly place bones
+        while (gameState.bonePositions.length < gameState.boneCount) {
+            const pos = Math.floor(Math.random() * gameState.totalEggs);
+            if (!gameState.bonePositions.includes(pos)) {
+                gameState.bonePositions.push(pos);
+            }
+        }
+        
+        // Reset grid
+        createEggGrid();
+        
+        // Update UI
+        startBtn.disabled = true;
+        cashoutBtn.disabled = false;
+        betInput.disabled = true;
+        boneCountSelect.disabled = true;
+        updateUI();
     });
     
-    gameState.isPlaying = true;
-    updateUI();
-    draw();
-}
-
-function generateRandomPositions(count) {
-    const positions = [];
-    const padding = ITEM_RADIUS + 20;
-    
-    for (let i = 0; i < count; i++) {
-        let x, y, overlapping;
+    // Handle egg click
+    function handleEggClick(index) {
+        if (!gameState.isPlaying) return;
+        if (gameState.revealedEggs.includes(index)) return;
         
-        do {
-            overlapping = false;
-            x = Math.random() * (canvas.width - padding * 2) + padding;
-            y = Math.random() * (canvas.height - padding * 2) + padding;
-            
-            for (let pos of positions) {
-                const distance = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
-                if (distance < ITEM_RADIUS * 2 + 20) {
-                    overlapping = true;
-                    break;
-                }
-            }
-        } while (overlapping);
+        // Reveal egg
+        gameState.revealedEggs.push(index);
+        const eggEl = eggGrid.children[index];
+        eggEl.classList.add('revealed');
         
-        positions.push({ x, y });
-    }
-    
-    return positions;
-}
-
-function draw() {
-    // Clear canvas
-    ctx.fillStyle = 'rgba(10, 14, 39, 0.8)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw grid
-    ctx.strokeStyle = 'rgba(255, 215, 0, 0.1)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < canvas.width; i += 50) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i, canvas.height);
-        ctx.stroke();
-    }
-    for (let i = 0; i < canvas.height; i += 50) {
-        ctx.beginPath();
-        ctx.moveTo(0, i);
-        ctx.lineTo(canvas.width, i);
-        ctx.stroke();
-    }
-    
-    // Draw items
-    gameState.items.forEach(item => item.draw());
-    
-    // Draw status text
-    if (gameState.isPlaying) {
-        ctx.font = 'bold 24px Arial';
-        ctx.fillStyle = '#FFD700';
-        ctx.textAlign = 'center';
-        ctx.fillText(`Multiplier: ${gameState.multiplier.toFixed(1)}x`, canvas.width / 2, 30);
-    }
-}
-
-function startGame() {
-    const betAmount = parseInt(document.getElementById('betAmount').value);
-    
-    if (betAmount < 1 || betAmount > 500) {
-        alert('Bet amount must be between 1 and 500 coins');
-        return;
-    }
-    
-    if (gameState.balance < betAmount) {
-        alert('Insufficient balance');
-        return;
-    }
-    
-    gameState.betAmount = betAmount;
-    gameState.balance -= betAmount;
-    gameState.winnings = betAmount;
-    
-    document.getElementById('startBtn').classList.add('hidden');
-    document.getElementById('cashoutBtn').classList.remove('hidden');
-    
-    initGame();
-}
-
-function cashout() {
-    if (!gameState.isPlaying) return;
-    
-    gameState.balance += gameState.winnings;
-    updateBalance();
-    
-    gameState.isPlaying = false;
-    document.getElementById('startBtn').classList.remove('hidden');
-    document.getElementById('cashoutBtn').classList.add('hidden');
-    
-    alert(`You won ${gameState.winnings} coins! Total balance: ${gameState.balance}`);
-    draw();
-}
-
-function resetGame() {
-    gameState.isPlaying = false;
-    gameState.items = [];
-    gameState.multiplier = 1.0;
-    gameState.itemsCount = 0;
-    gameState.winnings = 0;
-    
-    document.getElementById('startBtn').classList.remove('hidden');
-    document.getElementById('cashoutBtn').classList.add('hidden');
-    
-    updateUI();
-    draw();
-}
-
-function updateUI() {
-    document.getElementById('multiplier').textContent = gameState.multiplier.toFixed(1) + 'x';
-    document.getElementById('itemsCount').textContent = gameState.itemsCount;
-    document.getElementById('winningsDisplay').textContent = gameState.winnings + ' Coins';
-    updateBalance();
-}
-
-function updateBalance() {
-    document.getElementById('balanceDisplay').textContent = gameState.balance + ' Coins';
-    localStorage.setItem('user_coins', gameState.balance);
-    
-    // Update header coin display
-    const coinDisplay = document.getElementById('coinBalance');
-    if (coinDisplay) {
-        coinDisplay.innerText = new Intl.NumberFormat().format(gameState.balance) + ' Coins';
-    }
-}
-
-canvas.addEventListener('click', (e) => {
-    if (!gameState.isPlaying) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
-    
-    for (let item of gameState.items) {
-        if (!item.clicked && item.isClicked(x, y)) {
-            item.clicked = true;
+        if (gameState.bonePositions.includes(index)) {
+            // Hit bone - game over
+            eggEl.textContent = '🦴';
+            eggEl.classList.add('bone');
+            gameOver(false);
+        } else {
+            // Hit gem - increase multiplier
+            eggEl.textContent = '💎';
+            eggEl.classList.add('gem');
+            gameState.eggsRevealed++;
             
-            if (item.isEgg) {
-                gameState.itemsCount++;
-                gameState.multiplier += 0.2;
-                gameState.winnings = Math.floor(gameState.betAmount * gameState.multiplier);
-                updateUI();
-            } else {
-                // Hit a bone - game over
-                gameState.isPlaying = false;
-                gameState.balance += gameState.betAmount; // Return bet
-                updateBalance();
-                
-                document.getElementById('startBtn').classList.remove('hidden');
-                document.getElementById('cashoutBtn').classList.add('hidden');
-                
-                alert('💀 You hit a bone! Game Over!');
-                resetGame();
-                return;
+            // Calculate multiplier (increases with each gem)
+            gameState.multiplier = 1.00 + (gameState.eggsRevealed * 0.30);
+            
+            updateUI();
+            
+            // Check if all safe eggs revealed
+            if (gameState.eggsRevealed >= (gameState.totalEggs - gameState.boneCount)) {
+                gameOver(true);
             }
-            
-            break;
         }
     }
     
-    draw();
-});
-
-// Initialize on load
-document.addEventListener('DOMContentLoaded', () => {
-    gameState.balance = parseInt(localStorage.getItem('user_coins')) || 1000;
-    updateBalance();
-    draw();
+    // Cash out
+    cashoutBtn.addEventListener('click', function() {
+        if (!gameState.isPlaying) return;
+        gameOver(true);
+    });
+    
+    // Game over
+    function gameOver(won) {
+        gameState.isPlaying = false;
+        
+        // Reveal all bones
+        gameState.bonePositions.forEach(pos => {
+            if (!gameState.revealedEggs.includes(pos)) {
+                const eggEl = eggGrid.children[pos];
+                eggEl.textContent = '🦴';
+                eggEl.classList.add('revealed', 'bone');
+            }
+        });
+        
+        if (won) {
+            const winAmount = Math.floor(gameState.bet * gameState.multiplier);
+            setCredits(getCredits() + winAmount);
+            alert(`🎉 YOU CASHED OUT!\n\nMultiplier: ${gameState.multiplier.toFixed(2)}x\nYou won ${winAmount} credits!`);
+        } else {
+            alert(`💀 GAME OVER!\n\nYou hit a bone and lost ${gameState.bet} credits.\nBetter luck next time!`);
+        }
+        
+        // Reset UI
+        startBtn.disabled = false;
+        cashoutBtn.disabled = true;
+        betInput.disabled = false;
+        boneCountSelect.disabled = false;
+        
+        gameState.multiplier = 1.00;
+        gameState.eggsRevealed = 0;
+        updateUI();
+    }
+    
+    // Quick bet buttons
+    document.querySelectorAll('.quick-bet').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const amount = this.dataset.amount;
+            if (amount === 'max') {
+                betInput.value = getCredits();
+            } else {
+                betInput.value = amount;
+            }
+        });
+    });
+    
+    // Update UI
+    function updateUI() {
+        creditsEl.textContent = getCredits();
+        multiplierEl.textContent = gameState.multiplier.toFixed(2) + 'x';
+        eggsRevealedEl.textContent = `${gameState.eggsRevealed}/${gameState.totalEggs - gameState.boneCount}`;
+        
+        const potentialWin = Math.floor(gameState.bet * gameState.multiplier);
+        potentialWinEl.textContent = potentialWin;
+    }
+    
+    // Credits management
+    function getCredits() {
+        return parseInt(localStorage.getItem('credits') || '1000');
+    }
+    
+    function setCredits(amount) {
+        localStorage.setItem('credits', amount);
+        updateUI();
+    }
 });

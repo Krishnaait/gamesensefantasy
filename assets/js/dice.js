@@ -1,169 +1,218 @@
 /**
- * Dice Game - Canvas Implementation
- * Predict dice outcomes
+ * Dice Game - Two Dice Prediction
+ * Player predicts: Under 7, Exactly 7, or Over 7
+ * Payouts: Under/Over = 2x, Exactly 7 = 5x
  */
 
-const diceCanvas = document.getElementById('diceCanvas');
-const diceCtx = diceCanvas.getContext('2d');
-
-let diceGameState = {
-    prediction: null,
-    betAmount: 10,
-    balance: parseInt(localStorage.getItem('user_coins')) || 1000,
-    lastResult: null,
-    isRolling: false
-};
-
-function drawDice(value) {
-    const size = 180;
-    const x = (diceCanvas.width - size) / 2;
-    const y = (diceCanvas.height - size) / 2;
-    const dotRadius = 8;
-    
-    // Clear canvas
-    diceCtx.fillStyle = 'rgba(10, 14, 39, 0.8)';
-    diceCtx.fillRect(0, 0, diceCanvas.width, diceCanvas.height);
-    
-    // Draw dice
-    diceCtx.fillStyle = '#FFD700';
-    diceCtx.fillRect(x, y, size, size);
-    diceCtx.strokeStyle = '#FFA500';
-    diceCtx.lineWidth = 3;
-    diceCtx.strokeRect(x, y, size, size);
-    
-    // Draw dots based on value
-    diceCtx.fillStyle = '#000';
-    
-    const dotPositions = {
-        1: [[0.5, 0.5]],
-        2: [[0.25, 0.25], [0.75, 0.75]],
-        3: [[0.25, 0.25], [0.5, 0.5], [0.75, 0.75]],
-        4: [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]],
-        5: [[0.25, 0.25], [0.75, 0.25], [0.5, 0.5], [0.25, 0.75], [0.75, 0.75]],
-        6: [[0.25, 0.25], [0.75, 0.25], [0.25, 0.5], [0.75, 0.5], [0.25, 0.75], [0.75, 0.75]]
+document.addEventListener('DOMContentLoaded', function() {
+    // Game state
+    let gameState = {
+        prediction: null,
+        betAmount: 10,
+        isRolling: false,
+        totalRolls: parseInt(localStorage.getItem('dice_total_rolls') || '0'),
+        totalWins: parseInt(localStorage.getItem('dice_total_wins') || '0')
     };
     
-    if (dotPositions[value]) {
-        dotPositions[value].forEach(pos => {
-            const dotX = x + size * pos[0];
-            const dotY = y + size * pos[1];
-            diceCtx.beginPath();
-            diceCtx.arc(dotX, dotY, dotRadius, 0, Math.PI * 2);
-            diceCtx.fill();
+    // DOM elements
+    const dice1El = document.getElementById('dice1');
+    const dice2El = document.getElementById('dice2');
+    const totalEl = document.getElementById('diceTotal');
+    const rollBtn = document.getElementById('rollButton');
+    const betInput = document.getElementById('betAmount');
+    const predictionBtns = document.querySelectorAll('.prediction-btn');
+    const creditsEl = document.getElementById('credits');
+    const potentialWinEl = document.getElementById('potentialWin');
+    const totalRollsEl = document.getElementById('totalRolls');
+    const totalWinsEl = document.getElementById('totalWins');
+    
+    // Initialize
+    updateUI();
+    
+    // Prediction buttons
+    predictionBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all buttons
+            predictionBtns.forEach(b => b.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+            // Set prediction
+            gameState.prediction = this.dataset.prediction;
+            // Update potential win
+            updatePotentialWin();
         });
-    }
-    
-    // Draw value text
-    diceCtx.font = 'bold 60px Arial';
-    diceCtx.fillStyle = '#FFA500';
-    diceCtx.textAlign = 'center';
-    diceCtx.textBaseline = 'middle';
-    diceCtx.fillText(value, diceCanvas.width / 2, diceCanvas.height / 2 + 80);
-}
-
-function selectPrediction(type) {
-    diceGameState.prediction = type;
-    document.getElementById('selectionDisplay').textContent = type.toUpperCase();
-    
-    // Highlight selected button
-    document.querySelectorAll('.prediction-buttons button').forEach(btn => {
-        btn.classList.remove('btn-primary');
-        btn.classList.add('btn-secondary');
     });
     
-    event.target.classList.remove('btn-secondary');
-    event.target.classList.add('btn-primary');
-}
-
-function rollDice() {
-    if (!diceGameState.prediction) {
-        alert('Please select a prediction first');
-        return;
-    }
+    // Bet amount change
+    betInput.addEventListener('input', function() {
+        gameState.betAmount = parseInt(this.value) || 10;
+        updatePotentialWin();
+    });
     
-    const betAmount = parseInt(document.getElementById('betAmount').value);
-    
-    if (betAmount < 1 || betAmount > 500) {
-        alert('Bet amount must be between 1 and 500 coins');
-        return;
-    }
-    
-    if (diceGameState.balance < betAmount) {
-        alert('Insufficient balance');
-        return;
-    }
-    
-    diceGameState.isRolling = true;
-    document.getElementById('rollBtn').disabled = true;
-    
-    // Animate dice rolling
-    let rolls = 0;
-    const rollInterval = setInterval(() => {
-        const randomValue = Math.floor(Math.random() * 6) + 1;
-        drawDice(randomValue);
-        rolls++;
-        
-        if (rolls > 10) {
-            clearInterval(rollInterval);
-            
-            // Final result
-            const finalValue = Math.floor(Math.random() * 6) + 1;
-            drawDice(finalValue);
-            
-            // Check if prediction was correct
-            let won = false;
-            
-            if (diceGameState.prediction === 'high' && finalValue >= 4) won = true;
-            if (diceGameState.prediction === 'low' && finalValue <= 3) won = true;
-            if (diceGameState.prediction === 'even' && finalValue % 2 === 0) won = true;
-            if (diceGameState.prediction === 'odd' && finalValue % 2 !== 0) won = true;
-            
-            if (won) {
-                diceGameState.balance += betAmount * 2;
-                diceGameState.lastResult = `✓ Won ${betAmount * 2} coins!`;
-                document.getElementById('resultDisplay').textContent = `✓ Won ${betAmount * 2} coins!`;
-                document.getElementById('resultDisplay').style.color = '#10b981';
+    // Quick bet buttons
+    document.querySelectorAll('.quick-bet').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const amount = this.dataset.amount;
+            if (amount === 'max') {
+                betInput.value = getCredits();
             } else {
-                diceGameState.balance -= betAmount;
-                diceGameState.lastResult = `✗ Lost ${betAmount} coins`;
-                document.getElementById('resultDisplay').textContent = `✗ Lost ${betAmount} coins`;
-                document.getElementById('resultDisplay').style.color = '#ef4444';
+                betInput.value = amount;
             }
-            
-            updateBalance();
-            diceGameState.isRolling = false;
-            document.getElementById('rollBtn').disabled = false;
-        }
-    }, 100);
-}
-
-function resetGame() {
-    diceGameState.prediction = null;
-    diceGameState.lastResult = null;
-    document.getElementById('selectionDisplay').textContent = 'None';
-    document.getElementById('resultDisplay').textContent = '-';
-    document.getElementById('resultDisplay').style.color = 'var(--accent-gold)';
-    
-    document.querySelectorAll('.prediction-buttons button').forEach(btn => {
-        btn.classList.remove('btn-primary');
-        btn.classList.add('btn-secondary');
+            gameState.betAmount = parseInt(betInput.value);
+            updatePotentialWin();
+        });
     });
     
-    drawDice(0);
-}
-
-function updateBalance() {
-    document.getElementById('balanceDisplay').textContent = diceGameState.balance + ' Coins';
-    localStorage.setItem('user_coins', diceGameState.balance);
+    // Roll button
+    rollBtn.addEventListener('click', function() {
+        if (gameState.isRolling) return;
+        
+        if (!gameState.prediction) {
+            alert('Please select a prediction first!');
+            return;
+        }
+        
+        const bet = parseInt(betInput.value) || 10;
+        const credits = getCredits();
+        
+        if (bet < 1) {
+            alert('Minimum bet is 1 credit!');
+            return;
+        }
+        
+        if (bet > credits) {
+            alert('Insufficient credits!');
+            return;
+        }
+        
+        // Start rolling
+        gameState.isRolling = true;
+        gameState.betAmount = bet;
+        rollBtn.disabled = true;
+        
+        // Deduct bet
+        setCredits(credits - bet);
+        
+        // Animate dice rolling
+        animateDiceRoll();
+    });
     
-    const coinDisplay = document.getElementById('coinBalance');
-    if (coinDisplay) {
-        coinDisplay.innerText = new Intl.NumberFormat().format(diceGameState.balance) + ' Coins';
+    // Animate dice roll
+    function animateDiceRoll() {
+        let rolls = 0;
+        const maxRolls = 15;
+        
+        const interval = setInterval(() => {
+            // Show random dice values during animation
+            const rand1 = Math.floor(Math.random() * 6) + 1;
+            const rand2 = Math.floor(Math.random() * 6) + 1;
+            dice1El.querySelector('.dice-face').textContent = rand1;
+            dice2El.querySelector('.dice-face').textContent = rand2;
+            totalEl.textContent = '?';
+            
+            rolls++;
+            
+            if (rolls >= maxRolls) {
+                clearInterval(interval);
+                // Show final result
+                showFinalResult();
+            }
+        }, 100);
     }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    diceGameState.balance = parseInt(localStorage.getItem('user_coins')) || 1000;
-    updateBalance();
-    drawDice(0);
+    
+    // Show final dice result
+    function showFinalResult() {
+        // Generate final dice values
+        const dice1 = Math.floor(Math.random() * 6) + 1;
+        const dice2 = Math.floor(Math.random() * 6) + 1;
+        const total = dice1 + dice2;
+        
+        // Display result
+        dice1El.querySelector('.dice-face').textContent = dice1;
+        dice2El.querySelector('.dice-face').textContent = dice2;
+        totalEl.textContent = total;
+        
+        // Check win/loss
+        setTimeout(() => {
+            checkResult(total);
+        }, 500);
+    }
+    
+    // Check if player won
+    function checkResult(total) {
+        let won = false;
+        let multiplier = 0;
+        
+        if (gameState.prediction === 'under' && total < 7) {
+            won = true;
+            multiplier = 2;
+        } else if (gameState.prediction === 'exactly' && total === 7) {
+            won = true;
+            multiplier = 5;
+        } else if (gameState.prediction === 'over' && total > 7) {
+            won = true;
+            multiplier = 2;
+        }
+        
+        // Update stats
+        gameState.totalRolls++;
+        localStorage.setItem('dice_total_rolls', gameState.totalRolls);
+        
+        if (won) {
+            gameState.totalWins++;
+            localStorage.setItem('dice_total_wins', gameState.totalWins);
+            const winAmount = gameState.betAmount * multiplier;
+            setCredits(getCredits() + winAmount);
+            alert(`🎉 YOU WON ${winAmount} CREDITS! (${multiplier}x)\n\nDice: ${dice1El.querySelector('.dice-face').textContent} + ${dice2El.querySelector('.dice-face').textContent} = ${total}\nPrediction: ${gameState.prediction.toUpperCase()}`);
+        } else {
+            alert(`❌ YOU LOST!\n\nDice: ${dice1El.querySelector('.dice-face').textContent} + ${dice2El.querySelector('.dice-face').textContent} = ${total}\nPrediction: ${gameState.prediction.toUpperCase()}\n\nBetter luck next time!`);
+        }
+        
+        // Reset game state
+        gameState.isRolling = false;
+        gameState.prediction = null;
+        rollBtn.disabled = false;
+        
+        // Remove active class from prediction buttons
+        predictionBtns.forEach(btn => btn.classList.remove('active'));
+        
+        // Update UI
+        updateUI();
+    }
+    
+    // Update potential win display
+    function updatePotentialWin() {
+        if (!gameState.prediction) {
+            potentialWinEl.textContent = '0';
+            return;
+        }
+        
+        let multiplier = 0;
+        if (gameState.prediction === 'under' || gameState.prediction === 'over') {
+            multiplier = 2;
+        } else if (gameState.prediction === 'exactly') {
+            multiplier = 5;
+        }
+        
+        const potentialWin = gameState.betAmount * multiplier;
+        potentialWinEl.textContent = potentialWin;
+    }
+    
+    // Update UI
+    function updateUI() {
+        creditsEl.textContent = getCredits();
+        totalRollsEl.textContent = gameState.totalRolls;
+        totalWinsEl.textContent = gameState.totalWins;
+        updatePotentialWin();
+    }
+    
+    // Credits management
+    function getCredits() {
+        return parseInt(localStorage.getItem('credits') || '1000');
+    }
+    
+    function setCredits(amount) {
+        localStorage.setItem('credits', amount);
+        updateUI();
+    }
 });

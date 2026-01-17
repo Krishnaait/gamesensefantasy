@@ -1,182 +1,160 @@
 /**
- * Mines Game Implementation
- * Click safe tiles and avoid mines
+ * Mines Game - Minesweeper-style betting game
  */
 
-let minesGameState = {
-    isPlaying: false,
-    tiles: [],
-    minePositions: [],
-    safeCount: 0,
-    multiplier: 1.0,
-    betAmount: 10,
-    winnings: 0,
-    balance: parseInt(localStorage.getItem('user_coins')) || 1000,
-    mineCount: 3,
-    gridSize: 25
-};
-
-function createMinesGrid() {
-    const grid = document.getElementById('minesGrid');
-    grid.innerHTML = '';
-    grid.style.gridTemplateColumns = `repeat(5, 1fr)`;
+document.addEventListener('DOMContentLoaded', function() {
+    let gameState = {
+        isPlaying: false,
+        bet: 0,
+        multiplier: 1.00,
+        tilesRevealed: 0,
+        totalTiles: 25,
+        mineCount: 5,
+        minePositions: [],
+        revealedTiles: []
+    };
     
-    minesGameState.tiles = [];
-    
-    for (let i = 0; i < minesGameState.gridSize; i++) {
-        const tile = document.createElement('div');
-        tile.className = 'mine-tile';
-        tile.textContent = '?';
-        tile.dataset.index = i;
-        tile.onclick = () => clickTile(i);
-        
-        grid.appendChild(tile);
-        minesGameState.tiles.push({
-            index: i,
-            revealed: false,
-            isMine: false,
-            element: tile
-        });
-    }
-    
-    // Place mines randomly
-    minesGameState.minePositions = [];
-    while (minesGameState.minePositions.length < minesGameState.mineCount) {
-        const randomIndex = Math.floor(Math.random() * minesGameState.gridSize);
-        if (!minesGameState.minePositions.includes(randomIndex)) {
-            minesGameState.minePositions.push(randomIndex);
-            minesGameState.tiles[randomIndex].isMine = true;
-        }
-    }
-}
-
-function startMinesGame() {
-    const betAmount = parseInt(document.getElementById('mineBetAmount').value);
-    const mineCount = parseInt(document.getElementById('mineCount').value);
-    
-    if (betAmount < 1 || betAmount > 500) {
-        alert('Bet amount must be between 1 and 500 coins');
-        return;
-    }
-    
-    if (minesGameState.balance < betAmount) {
-        alert('Insufficient balance');
-        return;
-    }
-    
-    minesGameState.betAmount = betAmount;
-    minesGameState.mineCount = mineCount;
-    minesGameState.balance -= betAmount;
-    minesGameState.winnings = betAmount;
-    minesGameState.safeCount = 0;
-    minesGameState.multiplier = 1.0;
-    minesGameState.isPlaying = true;
-    
-    document.getElementById('mineStartBtn').classList.add('hidden');
-    document.getElementById('mineCashoutBtn').classList.remove('hidden');
-    document.getElementById('mineCount').disabled = true;
+    const minesGrid = document.getElementById('minesGrid');
+    const startBtn = document.getElementById('startButton');
+    const cashoutBtn = document.getElementById('cashoutButton');
+    const betInput = document.getElementById('betAmount');
+    const mineCountSelect = document.getElementById('mineCount');
+    const creditsEl = document.getElementById('credits');
+    const multiplierEl = document.getElementById('currentMultiplier');
+    const tilesRevealedEl = document.getElementById('tilesRevealed');
+    const potentialWinEl = document.getElementById('potentialWin');
     
     createMinesGrid();
-    updateMinesUI();
-}
-
-function clickTile(index) {
-    if (!minesGameState.isPlaying) return;
+    updateUI();
     
-    const tile = minesGameState.tiles[index];
+    function createMinesGrid() {
+        minesGrid.innerHTML = '';
+        for (let i = 0; i < gameState.totalTiles; i++) {
+            const tile = document.createElement('div');
+            tile.className = 'tile';
+            tile.dataset.index = i;
+            tile.textContent = '?';
+            tile.addEventListener('click', () => handleTileClick(i));
+            minesGrid.appendChild(tile);
+        }
+    }
     
-    if (tile.revealed) return;
-    
-    tile.revealed = true;
-    
-    if (tile.isMine) {
-        // Hit a mine - game over
-        tile.element.classList.add('mine');
-        tile.element.textContent = '💣';
+    startBtn.addEventListener('click', function() {
+        const bet = parseInt(betInput.value) || 10;
+        const credits = getCredits();
         
-        minesGameState.isPlaying = false;
-        minesGameState.balance += minesGameState.betAmount; // Return bet
+        if (bet < 1 || bet > credits) {
+            alert('Invalid bet amount!');
+            return;
+        }
         
-        document.getElementById('mineStartBtn').classList.remove('hidden');
-        document.getElementById('mineCashoutBtn').classList.add('hidden');
-        document.getElementById('mineCount').disabled = false;
+        setCredits(credits - bet);
         
-        // Reveal all mines
-        minesGameState.tiles.forEach(t => {
-            if (t.isMine && !t.revealed) {
-                t.element.classList.add('mine');
-                t.element.textContent = '💣';
+        gameState = {
+            isPlaying: true,
+            bet: bet,
+            multiplier: 1.00,
+            tilesRevealed: 0,
+            totalTiles: 25,
+            mineCount: parseInt(mineCountSelect.value),
+            minePositions: [],
+            revealedTiles: []
+        };
+        
+        while (gameState.minePositions.length < gameState.mineCount) {
+            const pos = Math.floor(Math.random() * gameState.totalTiles);
+            if (!gameState.minePositions.includes(pos)) {
+                gameState.minePositions.push(pos);
+            }
+        }
+        
+        createMinesGrid();
+        startBtn.disabled = true;
+        cashoutBtn.disabled = false;
+        betInput.disabled = true;
+        mineCountSelect.disabled = true;
+        updateUI();
+    });
+    
+    function handleTileClick(index) {
+        if (!gameState.isPlaying || gameState.revealedTiles.includes(index)) return;
+        
+        gameState.revealedTiles.push(index);
+        const tileEl = minesGrid.children[index];
+        tileEl.classList.add('revealed');
+        
+        if (gameState.minePositions.includes(index)) {
+            tileEl.textContent = '💣';
+            tileEl.classList.add('mine');
+            gameOver(false);
+        } else {
+            tileEl.textContent = '💎';
+            tileEl.classList.add('gem');
+            gameState.tilesRevealed++;
+            
+            const multiplierIncrease = 0.20 + (gameState.mineCount * 0.05);
+            gameState.multiplier = 1.00 + (gameState.tilesRevealed * multiplierIncrease);
+            
+            updateUI();
+            
+            if (gameState.tilesRevealed >= (gameState.totalTiles - gameState.mineCount)) {
+                gameOver(true);
+            }
+        }
+    }
+    
+    cashoutBtn.addEventListener('click', function() {
+        if (gameState.isPlaying) gameOver(true);
+    });
+    
+    function gameOver(won) {
+        gameState.isPlaying = false;
+        
+        gameState.minePositions.forEach(pos => {
+            if (!gameState.revealedTiles.includes(pos)) {
+                const tileEl = minesGrid.children[pos];
+                tileEl.textContent = '💣';
+                tileEl.classList.add('revealed', 'mine');
             }
         });
         
-        updateMinesBalance();
-        alert('💣 You hit a mine! Game Over!');
-        return;
+        if (won) {
+            const winAmount = Math.floor(gameState.bet * gameState.multiplier);
+            setCredits(getCredits() + winAmount);
+            alert('You won ' + winAmount + ' credits!');
+        } else {
+            alert('You hit a mine! Lost ' + gameState.bet + ' credits.');
+        }
+        
+        startBtn.disabled = false;
+        cashoutBtn.disabled = true;
+        betInput.disabled = false;
+        mineCountSelect.disabled = false;
+        gameState.multiplier = 1.00;
+        gameState.tilesRevealed = 0;
+        updateUI();
     }
     
-    // Safe tile
-    tile.element.classList.add('safe');
-    tile.element.textContent = '✓';
+    document.querySelectorAll('.quick-bet').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const amount = this.dataset.amount;
+            betInput.value = amount === 'max' ? getCredits() : amount;
+        });
+    });
     
-    minesGameState.safeCount++;
-    
-    // Calculate multiplier based on mines
-    // More mines = higher multiplier per safe tile
-    const multiplierIncrease = 0.5 + (minesGameState.mineCount * 0.1);
-    minesGameState.multiplier += multiplierIncrease;
-    minesGameState.winnings = Math.floor(minesGameState.betAmount * minesGameState.multiplier);
-    
-    updateMinesUI();
-}
-
-function minesCashout() {
-    if (!minesGameState.isPlaying) return;
-    
-    minesGameState.balance += minesGameState.winnings;
-    minesGameState.isPlaying = false;
-    
-    document.getElementById('mineStartBtn').classList.remove('hidden');
-    document.getElementById('mineCashoutBtn').classList.add('hidden');
-    document.getElementById('mineCount').disabled = false;
-    
-    updateMinesBalance();
-    alert(`You won ${minesGameState.winnings} coins! Total balance: ${minesGameState.balance}`);
-}
-
-function resetMinesGame() {
-    minesGameState.isPlaying = false;
-    minesGameState.tiles = [];
-    minesGameState.minePositions = [];
-    minesGameState.safeCount = 0;
-    minesGameState.multiplier = 1.0;
-    minesGameState.winnings = 0;
-    
-    document.getElementById('mineStartBtn').classList.remove('hidden');
-    document.getElementById('mineCashoutBtn').classList.add('hidden');
-    document.getElementById('mineCount').disabled = false;
-    
-    document.getElementById('minesGrid').innerHTML = '';
-    updateMinesUI();
-}
-
-function updateMinesUI() {
-    document.getElementById('safeCount').textContent = minesGameState.safeCount;
-    document.getElementById('minesMultiplier').textContent = minesGameState.multiplier.toFixed(1) + 'x';
-    document.getElementById('mineWinningsDisplay').textContent = minesGameState.winnings + ' Coins';
-    updateMinesBalance();
-}
-
-function updateMinesBalance() {
-    document.getElementById('mineBalanceDisplay').textContent = minesGameState.balance + ' Coins';
-    localStorage.setItem('user_coins', minesGameState.balance);
-    
-    const coinDisplay = document.getElementById('coinBalance');
-    if (coinDisplay) {
-        coinDisplay.innerText = new Intl.NumberFormat().format(minesGameState.balance) + ' Coins';
+    function updateUI() {
+        creditsEl.textContent = getCredits();
+        multiplierEl.textContent = gameState.multiplier.toFixed(2) + 'x';
+        tilesRevealedEl.textContent = gameState.tilesRevealed + '/' + (gameState.totalTiles - gameState.mineCount);
+        potentialWinEl.textContent = Math.floor(gameState.bet * gameState.multiplier);
     }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    minesGameState.balance = parseInt(localStorage.getItem('user_coins')) || 1000;
-    updateMinesBalance();
+    
+    function getCredits() {
+        return parseInt(localStorage.getItem('credits') || '1000');
+    }
+    
+    function setCredits(amount) {
+        localStorage.setItem('credits', amount);
+        updateUI();
+    }
 });

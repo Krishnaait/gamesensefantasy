@@ -81,12 +81,7 @@ $GAMES = array(
         'description' => '24/7 laser-themed game',
         'file' => 'games/247laser.php'
     ),
-    'fairplay' => array(
-        'name' => 'Fair Play Game',
-        'icon' => '⚖️',
-        'description' => 'Transparent game mechanics',
-        'file' => 'games/fairplay.php'
-    ),
+
     'slots' => array(
         'name' => 'Slots Game',
         'icon' => '🎰',

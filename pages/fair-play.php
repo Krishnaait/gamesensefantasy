@@ -47,7 +47,7 @@ include '../includes/header.php';
                 <li><strong>Plinko:</strong> Physics-based ball drop with random peg interactions</li>
                 <li><strong>11X Game:</strong> Fair multiplier calculation</li>
                 <li><strong>247LASER:</strong> Transparent game mechanics</li>
-                <li><strong>Fair Play Game:</strong> Demonstrating complete transparency</li>
+
             </ul>
 
             <h2 class="mb-lg mt-xl">3. Payout Rates</h2>

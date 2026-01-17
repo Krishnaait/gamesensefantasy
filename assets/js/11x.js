@@ -8,18 +8,18 @@ document.addEventListener('DOMContentLoaded', function() {
     let planeX = 50;
     let planeY = canvas.height - 50;
     let trail = [];
+    let pastResults = JSON.parse(localStorage.getItem('past11xResults') || '[]');
     
     const betBtn = document.getElementById('betButton');
     const cashoutBtn = document.getElementById('cashoutButton');
     
-    // Draw plane emoji or simple plane shape
+    // Draw plane emoji
     function drawPlane(x, y, crashed = false) {
         ctx.save();
         ctx.translate(x, y);
         
         if (crashed) {
             // Explosion effect
-            ctx.fillStyle = '#ff0000';
             ctx.font = '40px Arial';
             ctx.fillText('💥', -20, 10);
         } else {
@@ -31,12 +31,19 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.restore();
     }
     
-    // Draw trail behind plane
+    // Draw continuous trail line from start to current position
     function drawTrail() {
         if (trail.length < 2) return;
         
-        ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
-        ctx.lineWidth = 3;
+        // Draw gradient line
+        const gradient = ctx.createLinearGradient(trail[0].x, trail[0].y, trail[trail.length-1].x, trail[trail.length-1].y);
+        gradient.addColorStop(0, 'rgba(255, 215, 0, 0.3)');
+        gradient.addColorStop(1, 'rgba(255, 215, 0, 1)');
+        
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
         ctx.beginPath();
         ctx.moveTo(trail[0].x, trail[0].y);
         
@@ -49,11 +56,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Draw grid background
     function drawGrid() {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
         ctx.lineWidth = 1;
         
         // Vertical lines
-        for (let x = 0; x < canvas.width; x += 50) {
+        for (let x = 0; x < canvas.width; x += 60) {
             ctx.beginPath();
             ctx.moveTo(x, 0);
             ctx.lineTo(x, canvas.height);
@@ -69,6 +76,44 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Draw past results
+    function drawPastResults() {
+        const startX = 10;
+        const startY = 10;
+        const boxWidth = 60;
+        const boxHeight = 30;
+        const gap = 5;
+        
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Show last 8 results
+        const recentResults = pastResults.slice(-8).reverse();
+        
+        recentResults.forEach((result, index) => {
+            const x = startX + (index * (boxWidth + gap));
+            const y = startY;
+            
+            // Background
+            if (result >= 2.0) {
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+            } else {
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+            }
+            ctx.fillRect(x, y, boxWidth, boxHeight);
+            
+            // Border
+            ctx.strokeStyle = result >= 2.0 ? '#00ff00' : '#ff0000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, boxWidth, boxHeight);
+            
+            // Text
+            ctx.fillStyle = result >= 2.0 ? '#00ff00' : '#ff0000';
+            ctx.fillText(result.toFixed(2) + 'x', x + boxWidth/2, y + boxHeight/2);
+        });
+    }
+    
     function drawGraph() {
         // Clear canvas
         ctx.fillStyle = '#1a1a2e';
@@ -77,31 +122,38 @@ document.addEventListener('DOMContentLoaded', function() {
         // Draw grid
         drawGrid();
         
-        // Draw trail
-        drawTrail();
+        // Draw past results
+        drawPastResults();
         
-        // Update plane position
-        planeX = 50 + (multiplier - 1) * 60;
-        planeY = canvas.height - 50 - (multiplier - 1) * 35;
+        // Calculate plane position based on multiplier
+        // Start from bottom-left corner (20, canvas.height - 20)
+        const startX = 20;
+        const startY = canvas.height - 20;
+        
+        // Calculate trajectory
+        planeX = startX + (multiplier - 1) * 70;
+        planeY = startY - (multiplier - 1) * 40;
         
         // Keep plane within bounds
-        if (planeX > canvas.width - 50) planeX = canvas.width - 50;
-        if (planeY < 50) planeY = 50;
+        if (planeX > canvas.width - 30) planeX = canvas.width - 30;
+        if (planeY < 80) planeY = 80;
         
         // Add to trail
         if (gameActive) {
             trail.push({ x: planeX, y: planeY });
-            if (trail.length > 100) trail.shift(); // Limit trail length
         }
+        
+        // Draw trail
+        drawTrail();
         
         // Draw plane
         drawPlane(planeX, planeY, !gameActive && multiplier > 1);
         
-        // Draw multiplier on canvas
+        // Draw multiplier on canvas (centered, larger)
         ctx.fillStyle = '#FFD700';
-        ctx.font = 'bold 24px Arial';
+        ctx.font = 'bold 32px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(multiplier.toFixed(2) + 'x', canvas.width / 2, 40);
+        ctx.fillText(multiplier.toFixed(2) + 'x', canvas.width / 2, 70);
     }
     
     betBtn.addEventListener('click', function() {
@@ -134,12 +186,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function startGame() {
         gameActive = true;
         multiplier = 1.0;
-        planeX = 50;
-        planeY = canvas.height - 50;
-        trail = [];
+        planeX = 20;
+        planeY = canvas.height - 20;
+        trail = [{ x: 20, y: canvas.height - 20 }]; // Start trail from bottom-left
         
-        // Random crash point between 1.5x and 10x
-        const crashPoint = 1.5 + (Math.random() * 8.5);
+        // Random crash point between 1.2x and 10x
+        const crashPoint = 1.2 + (Math.random() * 8.8);
         
         const interval = setInterval(() => {
             if (!gameActive) {
@@ -154,6 +206,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (multiplier >= crashPoint) {
                 gameActive = false;
                 clearInterval(interval);
+                
+                // Save crash result
+                pastResults.push(parseFloat(multiplier.toFixed(2)));
+                if (pastResults.length > 20) pastResults.shift(); // Keep last 20
+                localStorage.setItem('past11xResults', JSON.stringify(pastResults));
                 
                 // Draw crashed plane
                 drawGraph();
@@ -181,8 +238,9 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillStyle = '#1a1a2e';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         drawGrid();
-        planeX = 50;
-        planeY = canvas.height - 50;
+        drawPastResults();
+        planeX = 20;
+        planeY = canvas.height - 20;
         drawPlane(planeX, planeY);
         
         updateUI();

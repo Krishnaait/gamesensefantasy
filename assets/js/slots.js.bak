@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    function getCredits() { return parseInt(localStorage.getItem('credits') || '1000'); }
+    function setCredits(amount) { localStorage.setItem('credits', amount); updateUI(); }
     function updateUI() { document.getElementById('credits').textContent = getCredits(); }
     updateUI();
 });

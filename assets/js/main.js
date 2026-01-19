@@ -27,14 +27,13 @@ function initCoinBalance() {
     let coins = localStorage.getItem('user_coins');
     
     if (coins === null) {
-        // If not in localStorage, use the value from PHP session (passed via data attribute or global variable)
-        // For now, we'll just use the value already in the display
-        coins = coinDisplay.innerText.replace(/[^0-9]/g, '');
+        // Default starting balance
+        coins = 1000;
         localStorage.setItem('user_coins', coins);
-    } else {
-        // Update display with localStorage value
-        updateCoinDisplay(coins);
     }
+    
+    // Update display with localStorage value
+    updateCoinDisplay(coins);
 }
 
 /**
@@ -46,38 +45,51 @@ function updateCoinDisplay(amount) {
         coinDisplay.innerText = new Intl.NumberFormat().format(amount) + ' Coins';
     }
     localStorage.setItem('user_coins', amount);
-    
-    // Also update via AJAX to PHP session if needed
-    // updateSessionCoins(amount);
+}
+
+/**
+ * Get current coin balance
+ */
+function getCredits() {
+    return parseInt(localStorage.getItem('user_coins')) || 1000;
+}
+
+/**
+ * Set coin balance
+ */
+function setCredits(amount) {
+    amount = Math.max(0, parseInt(amount)); // Ensure non-negative
+    localStorage.setItem('user_coins', amount);
+    updateCoinDisplay(amount);
 }
 
 /**
  * Add coins to balance
  */
 function addCoins(amount) {
-    let currentCoins = parseInt(localStorage.getItem('user_coins')) || 0;
+    let currentCoins = getCredits();
     currentCoins += amount;
-    updateCoinDisplay(currentCoins);
+    setCredits(currentCoins);
 }
 
 /**
  * Deduct coins from balance
  */
 function deductCoins(amount) {
-    let currentCoins = parseInt(localStorage.getItem('user_coins')) || 0;
+    let currentCoins = getCredits();
     if (currentCoins >= amount) {
         currentCoins -= amount;
-        updateCoinDisplay(currentCoins);
+        setCredits(currentCoins);
         return true;
     }
     return false;
 }
 
 /**
- * Get current coin balance
+ * Get current coin balance (alias)
  */
 function getCoins() {
-    return parseInt(localStorage.getItem('user_coins')) || 0;
+    return getCredits();
 }
 
 /**

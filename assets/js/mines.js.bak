@@ -149,5 +149,12 @@ document.addEventListener('DOMContentLoaded', function() {
         potentialWinEl.textContent = Math.floor(gameState.bet * gameState.multiplier);
     }
     
+    function getCredits() {
+        return parseInt(localStorage.getItem('credits') || '1000');
+    }
     
+    function setCredits(amount) {
+        localStorage.setItem('credits', amount);
+        updateUI();
+    }
 });

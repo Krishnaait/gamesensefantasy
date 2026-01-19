@@ -52,7 +52,7 @@ include 'includes/header.php';
     <div class="container">
         <div class="flex justify-between align-center mb-xl">
             <h2>Featured Games</h2>
-            <a href="/pages/games.php" class="text-gold">View All Games &rarr;</a>
+            <a href="/pages/games.php" class="view-all-games-link">View All Games <span class="arrow">→</span></a>
         </div>
         
         <div class="footer-content">
